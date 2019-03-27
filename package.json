@@ -1,0 +1,41 @@
+{
+  "name": "ttl2jsonld",
+  "version": "0.0.1",
+  "description": "Turtle to JSON-LD converter for node.js and browser, no library dependencies",
+  "main": "ttl2jsonld.js",
+  "files": [
+    "ttl2jsonld.js"
+  ],
+  "bin": {
+    "ttl2jsonld": "./bin/cli.js"
+  },
+  "scripts": {
+    "test": "mocha",
+    "build": "node bin/build.js spec/ttl2jsonld.pegjs > ttl2jsonld.js",
+    "spec-turtle": "rdf-test-suite spec/parser.js http://w3c.github.io/rdf-tests/turtle/manifest.ttl"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/frogcat/ttl2jsonld.git"
+  },
+  "keywords": [
+    "rdf",
+    "turtle",
+    "json-ld",
+    "javascript"
+  ],
+  "author": "frogcat",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/frogcat/ttl2jsonld/issues"
+  },
+  "homepage": "https://github.com/frogcat/ttl2jsonld#readme",
+  "devDependencies": {
+    "@rdfjs/parser-jsonld": "^1.1.1",
+    "chai": "^4.2.0",
+    "mocha": "^6.0.2",
+    "pegjs": "^0.10.0",
+    "rdf-test-suite": "^1.6.0",
+    "string-to-stream": "^1.1.1"
+  }
+}
