@@ -1,36 +1,36 @@
 {
-  var prefixes = {};
+  var URL = URL || require("url").URL;
   function createObject(property,value){var a={};a[property]=value;return a;}
-  function setPrefix(prefix,uri){prefixes[prefix]=uri;}
-  function getPrefix(prefix){return prefixes[prefix];}
+  var context = {};
+  function addPrefix(prefix,uri){
+    if(context[prefix]===undefined){
+      context[prefix] = [uri];
+      return;
+    }
+    const last = context[prefix][context[prefix].length-1];
+    if(last!==uri){
+      if(prefix==="@base") context[prefix].push(new URL(uri,last).toString());
+      else context[prefix].push(uri);
+    }
+  }
+  function getPrefix(prefix){return context[prefix];}
 }
 
 // [1] turtleDoc	::=	statement*
 turtleDoc = statements:statement* IGNORE* {
-  var result = [];
-  var graph = [];
-  var context = {};
-  var save = function(){
-    var json = {};
-    if(Object.keys(context).length>0) json["@context"] = Object.assign({},context);
-    if(graph.length===1) Object.assign(json,graph[0]);
-    else json["@graph"] = graph;
-    result.push(json);
-    graph = [];
-  };
-  statements.forEach((statement,i)=>{
-    if(typeof b==='string'){
-      // do nothing
-    } else if(Array.isArray(statement)){
-      graph = graph.concat(statement);
-    }else{
-      if(graph.length>0) save();
-      Object.assign(context,statement);
-    }
-    if(i===statements.length-1) save();
+  var jsonld = {};
+  Object.keys(context).forEach(key=>{
+    if(jsonld["@context"]===undefined) jsonld["@context"] = {};
+    jsonld["@context"][key] = context[key][0];
   });
 
-  return result.length===1 ? result[0] : result;
+  jsonld["@graph"] = [];
+  statements.filter(a=>Array.isArray(a)).forEach(a=>{
+    a.forEach(b=>{
+      jsonld["@graph"].push(b);
+    });
+  });
+  return jsonld;
 }
 
 // [2] statement	::=	directive | triples '.'
@@ -44,30 +44,41 @@ directive = prefixID/base/sparqlPrefix/sparqlBase
 
 // [4]	prefixID	::=	'@prefix' PNAME_NS IRIREF '.'
 prefixID = IGNORE* '@prefix' IGNORE* a:PNAME_NS_NO_CHECK IGNORE* b:IRIREF IGNORE* '.' {
-  setPrefix(a,b);
-  return createObject(a==="" ? "0" : a, b);
+  addPrefix(a==="" ? "0" : a,b);
+  return {};
 }
 
 // [5]	base		::=	'@base' IRIREF '.'
-base = IGNORE* '@base' IGNORE* a:IRIREF IGNORE* '.' { return {"@base":a};}
+base = IGNORE* '@base' IGNORE* a:IRIREF IGNORE* '.' {
+  addPrefix("@base",a);
+  return {};
+}
 
 // [5s]	sparqlBase	::=	"BASE" IRIREF
-sparqlBase = IGNORE* [Bb][Aa][Ss][Ee] IGNORE* a:IRIREF { return {"@base":a};}
+sparqlBase = IGNORE* [Bb][Aa][Ss][Ee] IGNORE* a:IRIREF {
+  addPrefix("@base",a);
+  return {};
+}
 
 // [6s]	sparqlPrefix	::=	"PREFIX" PNAME_NS IRIREF
 sparqlPrefix = IGNORE* [Pp][Rr][Ee][Ff][Ii][Xx] IGNORE* a:PNAME_NS_NO_CHECK IGNORE* b:IRIREF {
-  setPrefix(a,b);
-  return createObject(a==="" ? "0" : a, b);
+  addPrefix(a==="" ? "0" : a,b);
+  return {};
 }
 
 // [6]	triples		::=	subject predicateObjectList | blankNodePropertyList predicateObjectList?
 triples	=	s:subject p:predicateObjectList {
-  return (Array.isArray(s) ? s : [s]).map(subject=>{
+  var x = {};
+  if(typeof s==='string' && s!=='[]') x["@id"] = s;
+  else if(typeof s==='object') Object.assign(x,s);
+  if(p) Object.assign(x,p);
+  return [x];
+/*  return (Array.isArray(s) ? s : [s]).map(subject=>{
     var x = {};
     if(subject!=="[]") x["@id"] = subject;
     Object.assign(x,p);
     return x;
-  });
+  });*/
 } /
 s:blankNodePropertyList p:predicateObjectList? {
   var x = {};
@@ -104,7 +115,24 @@ objectList = a:object b:(IGNORE* ',' c:object {return c;})* {
 verb =  a:predicate {return a;} / IGNORE* 'a' {return '@type';}
 
 // [10]	subject			::=	iri | BlankNode | collection
-subject = a:collection {return a.map(b=>b["@id"]);} / BlankNode / iri
+//subject = a:collection {
+//  var root = {};
+//  var focus = null;
+//  a["@list"].forEach(b=>{
+//    if(focus===null) focus = root;
+//    else{
+//      focus["http://www.w3.org/1999/02/22-rdf-syntax-ns#rest"] = {};
+//      focus = focus["http://www.w3.org/1999/02/22-rdf-syntax-ns#rest"];
+//    }
+//    focus["http://www.w3.org/1999/02/22-rdf-syntax-ns#first"] = b;
+//    focus["http://www.w3.org/1999/02/22-rdf-syntax-ns#rest"] = {
+//      "@id" : "http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"
+//    };
+//  });
+//  return root;
+//
+// } / BlankNode / iri
+subject = collection / BlankNode / iri
 
 // [11]	predicate		::=	iri
 predicate = IGNORE* a:iri {return a;}
@@ -124,7 +152,26 @@ literal = RDFLiteral / NumericLiteral / BooleanLiteral
 blankNodePropertyList = IGNORE* '[' a:predicateObjectList IGNORE* ']' {return a;}
 
 // Dobe [15]	collection		::=	'(' object* ')'
-collection = IGNORE* '(' a:object* IGNORE* ')' {return a;}
+//collection = IGNORE* '(' a:object* IGNORE* ')' {return {"@list":a};}
+collection = IGNORE* '(' a:object* IGNORE* ')' {
+  if(a.length===0)
+    return {"@id" : "http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"};
+
+  var root = {};
+  var focus = null;
+  a.forEach(b=>{
+    if(focus===null) focus = root;
+    else{
+      focus["http://www.w3.org/1999/02/22-rdf-syntax-ns#rest"] = {};
+      focus = focus["http://www.w3.org/1999/02/22-rdf-syntax-ns#rest"];
+    }
+    focus["http://www.w3.org/1999/02/22-rdf-syntax-ns#first"] = b;
+    focus["http://www.w3.org/1999/02/22-rdf-syntax-ns#rest"] = {
+      "@id" : "http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"
+    };
+  });
+  return root;
+}
 
 // [16]	NumericLiteral		::=	INTEGER | DECIMAL | DOUBLE
 NumericLiteral = IGNORE* a:(DOUBLE/DECIMAL/INTEGER) {return a;}
@@ -161,15 +208,26 @@ IRIREF = '<' a:([^\u0000-\u0020<>"{}|^`\\]/UCHAR)* '>' {
     if(s.length===10) return String.fromCodePoint("0x"+s.substring(2));
     return s;
   }).join("");
-  if(decoded.match(/^[^\u0000-\u0020<>"{}|^`\\]*$/))
-    return a.join("");
+  if(decoded.match(/^[^\u0000-\u0020<>"{}|^`\\]*$/)){
+    var join = a.join("");
+    var base = options.baseIRI;
+    if(context["@base"]!==undefined) base = context["@base"][context["@base"].length-1];
+
+    if(!base || join.match(/^(http:|https:|urn:|file:)/)) return join;
+    if(join.indexOf("//")===0 && base) return base.split("//")[0]+join;
+    try{
+      return new URL(join,base).toString();
+    }catch(e){
+      error("Invalid IRIREF "+join);
+    }
+  }
   else error("Invalid IRIREF "+a.join("")+" / "+decoded);
 }
 
 // [139s]	PNAME_NS		::=	PN_PREFIX? ':'
 // 未登録の PREFIX が使用されていたらエラーにする
 PNAME_NS = a:PN_PREFIX? ':' {
-  if(getPrefix(a||"")===undefined)
+  if(getPrefix(a||"0")===undefined)
     error("undefined prefix "+a);
   return (a||"0");
 }
@@ -178,7 +236,11 @@ PNAME_NS = a:PN_PREFIX? ':' {
 PNAME_NS_NO_CHECK = a:PN_PREFIX? ':' {return (a||"");}
 
 // [140s]	PNAME_LN		::=	PNAME_NS PN_LOCAL
-PNAME_LN = a:PNAME_NS b:PN_LOCAL {return a+":"+b;}
+PNAME_LN = a:PNAME_NS b:PN_LOCAL {
+  var x = context[a];
+  if(x.length===1) return a+":"+b;
+  else return x[x.length-1] + b;
+}
 
 // [141s]	BLANK_NODE_LABEL	::=	'_:' (PN_CHARS_U | [0-9]) ((PN_CHARS | '.')* PN_CHARS)?
 BLANK_NODE_LABEL = $(

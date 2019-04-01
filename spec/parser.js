@@ -6,7 +6,9 @@ module.exports = {
   parse: function(ttl, baseIRI, options) {
     return new Promise((resolve, reject) => {
       try {
-        const jsonld = parse(ttl);
+        const jsonld = parse(ttl, {
+          baseIRI: baseIRI
+        });
         const input = stringToStream(JSON.stringify(jsonld));
         const parserJsonld = new ParserJsonld();
         const output = parserJsonld.import(input);
