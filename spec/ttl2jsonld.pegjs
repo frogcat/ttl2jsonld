@@ -196,8 +196,14 @@ INTEGER =
   s:[+-]? i:[0-9]+ {return parseFloat((s==="-" ? "-" : "")+i.join(""));}
 
 // [20]	DECIMAL			::=	[+-]? [0-9]* '.' [0-9]+
+
 DECIMAL =
-  s:[+-]? i:[0-9]* '.' f:[0-9]+ {return parseFloat((s==="-" ? "-" : "")+i.join("")+"."+f.join(""));}
+  s:[+-]? i:[0-9]* '.' f:[0-9]+ {
+    return {
+      "@value" : (s==="-" ? "-" : "")+i.join("")+"."+f.join(""),
+      "@type" : "http://www.w3.org/2001/XMLSchema#decimal"
+    };
+  }
 
 // [21]	DOUBLE			::=	[+-]? ([0-9]+ '.' [0-9]* EXPONENT | '.' [0-9]+ EXPONENT | [0-9]+ EXPONENT)
 DOUBLE =
@@ -206,7 +212,12 @@ DOUBLE =
             '.'f:[0-9]* e:EXPONENT {return "0."+f.join("")+e;} /
     i:[0-9]+            e:EXPONENT {return i.join("")+e;}
   )
-  {return parseFloat((s==="-" ? "-" : "") + n);}
+  {
+    return {
+      "@value" : (s==="-"?"-":"") + n,
+      "@type" : "http://www.w3.org/2001/XMLSchema#double"
+    };
+  }
 
 // [154s]	EXPONENT		::=	[eE] [+-]? [0-9]+
 EXPONENT = $([eE] [+-]? [0-9]+)
@@ -221,7 +232,10 @@ STRING_LITERAL_SINGLE_QUOTE = "'" a:([^\u0027\u005c\u000a\u000d]/ECHAR/UCHAR)* "
 STRING_LITERAL_LONG_SINGLE_QUOTE =
   "'''"
   head:([^'\\]/ECHAR/UCHAR)*
-  body:(("''" ([^'\\]/ECHAR/UCHAR)+) / ("'" ([^'\\]/ECHAR/UCHAR)+))*
+  body:(
+    ("''" a:([^'\\]/ECHAR/UCHAR)+ {return "''"+a.join("");} ) /
+    ("'"  a:([^'\\]/ECHAR/UCHAR)+ {return "'" +a.join("");} )
+  )*
   "'''"
   {return head.join("")+body.join("");}
 
@@ -229,15 +243,33 @@ STRING_LITERAL_LONG_SINGLE_QUOTE =
 STRING_LITERAL_LONG_QUOTE =
   '"""'
   head:([^"\\]/ECHAR/UCHAR)*
-  body:(('""' ([^"\\]/ECHAR/UCHAR)+) / ('"' ([^"\\]/ECHAR/UCHAR)+))*
+  body:(
+    ('""' a:([^"\\]/ECHAR/UCHAR)+ {return '""'+a.join("");}) /
+    ('"'  a:([^"\\]/ECHAR/UCHAR)+ {return '"' +a.join("");})
+  )*
   '"""'
   {return head.join("")+body.join("");}
 
 // [26]	UCHAR				    ::=	'\u' HEX HEX HEX HEX | '\U' HEX HEX HEX HEX HEX HEX HEX HEX
-UCHAR = $('\\U' HEX HEX HEX HEX HEX HEX HEX HEX / '\\u' HEX HEX HEX HEX )
+UCHAR =
+  '\\U' hex:(HEX HEX HEX HEX HEX HEX HEX HEX) {
+    return String.fromCodePoint(parseInt(hex.join(""),16));
+  } /
+  '\\u' hex:(HEX HEX HEX HEX) {
+    return String.fromCharCode(parseInt(hex.join(""),16));
+  }
+
 
 // [159s]	ECHAR				    ::=	'\' [tbnrf"'\]
-ECHAR = $('\\' [tbnrf"'\\])
+ECHAR =
+  '\\t' {return '\t';} /
+  '\\b' {return '\b';} /
+  '\\n' {return '\n';} /
+  '\\r' {return '\r';} /
+  '\\f' {return '\f';} /
+  '\\"' {return '"';} /
+  "\\'" {return "'";} /
+  '\\\\' {return '\\';}
 
 // [161s]	WS				    ::=	#x20 | #x9 | #xD | #xA /* #x20=space #x9=character tabulation #xD=carriage return #xA=new line */
 WS = [\u0020\u0009\u000d\u000a]
@@ -278,11 +310,11 @@ PN_PREFIX = $(
 )
 
 // [168s]	PN_LOCAL	::=	(PN_CHARS_U | ':' | [0-9] | PLX) ((PN_CHARS | '.' | ':' | PLX)* (PN_CHARS | ':' | PLX))?
-PN_LOCAL = $(
-  (PN_CHARS_U/':'/[0-9]/PLX)
-  (PN_CHARS/':'/PLX)*
-  ('.'+ (PN_CHARS/':'/PLX)+)*
-)
+PN_LOCAL =
+  head:(PN_CHARS_U/':'/[0-9]/PLX)
+  body:(PN_CHARS/':'/PLX)*
+  tail:(a:'.'+ b:(PN_CHARS/':'/PLX)+ {return a.join("")+b.join("");})*
+{return head+body.join("")+tail.join("");}
 
 // [169s]	PLX	::=	PERCENT | PN_LOCAL_ESC
 PLX = PERCENT / PN_LOCAL_ESC
@@ -294,4 +326,5 @@ PERCENT = $('%' HEX HEX)
 HEX = [0-9A-Fa-f]
 
 // [172s]	PN_LOCAL_ESC	::=	'\' ('_' | '~' | '.' | '-' | '!' | '$' | '&' | "'" | '(' | ')' | '*' | '+' | ',' | ';' | '=' | '/' | '?' | '#' | '@' | '%')
-PN_LOCAL_ESC = '\\_' / '\\~' / '\\.' / '\\-' / '\\!' / '\\$' / '\\&' / "\\'" / '\\(' / '\\)' / '\\*' / '\\+' / '\\,' / '\\;' / '\\=' / '\\/' / '\\?' / '\\#' / '\\@' / '\\%'
+//PN_LOCAL_ESC = '\\_' / '\\~' / '\\.' / '\\-' / '\\!' / '\\$' / '\\&' / "\\'" / '\\(' / '\\)' / '\\*' / '\\+' / '\\,' / '\\;' / '\\=' / '\\/' / '\\?' / '\\#' / '\\@' / '\\%'
+PN_LOCAL_ESC = '\\' a:('_'/'~'/'.'/'-'/ '!' / '$' / '&' / "'" / '(' / ')' / '*' / '+' / ',' / ';' / '=' / '/' / '?' / '#' / '@' / '%') {return a;}
