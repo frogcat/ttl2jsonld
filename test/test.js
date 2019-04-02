@@ -122,20 +122,19 @@ describe('ttl2json', () => {
 <I> <http://xmlns.com/foaf/0.1/name> "Bob".
 @prefix skos: <http://www.w3.org/2004/02/skos/core#> .
 <You> <http://xmlns.com/foaf/0.1/name> "Candy".
-`)).deep.equal([{
-        "@context": {
-          "foaf": "http://xmlns.com/foaf/0.1/"
-        },
-        "@id": "I",
-        "http://xmlns.com/foaf/0.1/name": "Bob"
-      }, {
+`)).deep.equal({
         "@context": {
           "foaf": "http://xmlns.com/foaf/0.1/",
           "skos": "http://www.w3.org/2004/02/skos/core#"
         },
-        "@id": "You",
-        "http://xmlns.com/foaf/0.1/name": "Candy"
-      }]);
+        "@graph": [{
+          "@id": "I",
+          "http://xmlns.com/foaf/0.1/name": "Bob"
+        }, {
+          "@id": "You",
+          "http://xmlns.com/foaf/0.1/name": "Candy"
+        }]
+      });
     });
 
     it('EXAMPLE 66: A set of statements serialized in Turtle', () => {
@@ -287,58 +286,97 @@ describe('ttl2json', () => {
     it('decimal', () => {
       expect(ttl2json(`<I> <http://example.org/height> 123.4.`)).deep.equal({
         "@id": "I",
-        "http://example.org/height": 123.4
+        "http://example.org/height": {
+          "@value": "123.4",
+          "@type": "http://www.w3.org/2001/XMLSchema#decimal"
+        }
       });
       expect(ttl2json(`<I> <http://example.org/height> +123.4.`)).deep.equal({
         "@id": "I",
-        "http://example.org/height": 123.4
+        "http://example.org/height": {
+          "@value": "+123.4",
+          "@type": "http://www.w3.org/2001/XMLSchema#decimal"
+        }
       });
       expect(ttl2json(`<I> <http://example.org/height> -123.4.`)).deep.equal({
         "@id": "I",
-        "http://example.org/height": -123.4
+        "http://example.org/height": {
+          "@value": "-123.4",
+          "@type": "http://www.w3.org/2001/XMLSchema#decimal"
+        }
       });
       expect(ttl2json(`<I> <http://example.org/height> 0.123.`)).deep.equal({
         "@id": "I",
-        "http://example.org/height": 0.123
+        "http://example.org/height": {
+          "@value": "0.123",
+          "@type": "http://www.w3.org/2001/XMLSchema#decimal"
+        }
       });
       expect(ttl2json(`<I> <http://example.org/height> +0.123.`)).deep.equal({
         "@id": "I",
-        "http://example.org/height": 0.123
+        "http://example.org/height": {
+          "@value": "+0.123",
+          "@type": "http://www.w3.org/2001/XMLSchema#decimal"
+        }
       });
       expect(ttl2json(`<I> <http://example.org/height> -0.123.`)).deep.equal({
         "@id": "I",
-        "http://example.org/height": -0.123
+        "http://example.org/height": {
+          "@value": "-0.123",
+          "@type": "http://www.w3.org/2001/XMLSchema#decimal"
+        }
       });
       expect(ttl2json(`<I> <http://example.org/height> .123.`)).deep.equal({
         "@id": "I",
-        "http://example.org/height": 0.123
+        "http://example.org/height": {
+          "@value": ".123",
+          "@type": "http://www.w3.org/2001/XMLSchema#decimal"
+        }
       });
       expect(ttl2json(`<I> <http://example.org/height> +.123.`)).deep.equal({
         "@id": "I",
-        "http://example.org/height": 0.123
+        "http://example.org/height": {
+          "@value": "+.123",
+          "@type": "http://www.w3.org/2001/XMLSchema#decimal"
+        }
       });
       expect(ttl2json(`<I> <http://example.org/height> -.123.`)).deep.equal({
         "@id": "I",
-        "http://example.org/height": -0.123
+        "http://example.org/height": {
+          "@value": "-.123",
+          "@type": "http://www.w3.org/2001/XMLSchema#decimal"
+        }
       });
     });
 
     it('double', () => {
       expect(ttl2json(`<I> <http://example.org/height> 4.2E9.`)).deep.equal({
         "@id": "I",
-        "http://example.org/height": 4.2e9
+        "http://example.org/height": {
+          "@value": "4.2E9",
+          "@type": "http://www.w3.org/2001/XMLSchema#double"
+        }
       });
       expect(ttl2json(`<I> <http://example.org/height> -4.2E9.`)).deep.equal({
         "@id": "I",
-        "http://example.org/height": -4.2e9
+        "http://example.org/height": {
+          "@value": "-4.2E9",
+          "@type": "http://www.w3.org/2001/XMLSchema#double"
+        }
       });
       expect(ttl2json(`<I> <http://example.org/height> 4.2E-9.`)).deep.equal({
         "@id": "I",
-        "http://example.org/height": 4.2e-9
+        "http://example.org/height": {
+          "@value": "4.2E-9",
+          "@type": "http://www.w3.org/2001/XMLSchema#double"
+        }
       });
       expect(ttl2json(`<I> <http://example.org/height> -4.2E-9.`)).deep.equal({
         "@id": "I",
-        "http://example.org/height": -4.2e-9
+        "http://example.org/height": {
+          "@value": "-4.2E-9",
+          "@type": "http://www.w3.org/2001/XMLSchema#double"
+        }
       });
     });
 
@@ -486,13 +524,31 @@ describe('ttl2json', () => {
         "@context": {
           "foaf": "http://xmlns.com/foaf/0.1/"
         },
-        "@graph": [{
+        "http://www.w3.org/1999/02/22-rdf-syntax-ns#first": {
           "@id": "I",
-          "@type": "foaf:Person"
-        }, {
-          "@id": "You",
-          "@type": "foaf:Person"
-        }]
+        },
+        "http://www.w3.org/1999/02/22-rdf-syntax-ns#rest": {
+          "http://www.w3.org/1999/02/22-rdf-syntax-ns#first": {
+            "@id": "You"
+          },
+          "http://www.w3.org/1999/02/22-rdf-syntax-ns#rest": {
+            "@id": "http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"
+          }
+        },
+        "@type": "foaf:Person"
+      });
+    });
+
+    it('empty subject', () => {
+      expect(ttl2json(`
+        @prefix foaf: <http://xmlns.com/foaf/0.1/> .
+  () a foaf:Person .
+`)).deep.equal({
+        "@context": {
+          "foaf": "http://xmlns.com/foaf/0.1/"
+        },
+        "@id": "http://www.w3.org/1999/02/22-rdf-syntax-ns#nil",
+        "@type": "foaf:Person"
       });
     });
 
@@ -505,13 +561,46 @@ describe('ttl2json', () => {
           "foaf": "http://xmlns.com/foaf/0.1/"
         },
         "@id": "I",
-        "foaf:know": [{
-          "@id": "You",
-        }, {
-          "@id": "Cat"
-        }]
+        "foaf:know": {
+          "@list": [{
+            "@id": "You",
+          }, {
+            "@id": "Cat"
+          }]
+        }
       });
     });
+
+    it('nested object', () => {
+      expect(ttl2json(`
+        @prefix foaf: <http://xmlns.com/foaf/0.1/> .
+  <I> foaf:know ((<You> <Cat>)) .
+`)).deep.equal({
+        "@context": {
+          "foaf": "http://xmlns.com/foaf/0.1/"
+        },
+        "@id": "I",
+        "foaf:know": {
+          "http://www.w3.org/1999/02/22-rdf-syntax-ns#first": {
+            "http://www.w3.org/1999/02/22-rdf-syntax-ns#first": {
+              "@id": "You"
+            },
+            "http://www.w3.org/1999/02/22-rdf-syntax-ns#rest": {
+              "http://www.w3.org/1999/02/22-rdf-syntax-ns#first": {
+                "@id": "Cat"
+              },
+              "http://www.w3.org/1999/02/22-rdf-syntax-ns#rest": {
+                "@id": "http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"
+              },
+            }
+          },
+          "http://www.w3.org/1999/02/22-rdf-syntax-ns#rest": {
+            "@id": "http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"
+          }
+        }
+      });
+    });
+
   });
 
   describe('blankNodePropertyList', () => {
@@ -621,7 +710,9 @@ describe('ttl2json', () => {
           "0": "http://example.org/stuff/1.0/"
         },
         "@id": "0:a",
-        "0:b": []
+        "0:b": {
+          "@list": []
+        }
       });
     });
 

@@ -11,7 +11,7 @@
   },
   "scripts": {
     "test": "mocha",
-    "build": "node bin/build.js spec/ttl2jsonld.pegjs > ttl2jsonld.js",
+    "build": "pegjs -o ttl2jsonld.js --format umd --export-var ttl2jsonld spec/ttl2jsonld.pegjs",
     "spec-turtle": "rdf-test-suite spec/parser.js http://w3c.github.io/rdf-tests/turtle/manifest.ttl -c .rdf-test-suite-cache/"
   },
   "repository": {

@@ -14,6 +14,28 @@
     }
   }
   function getPrefix(prefix){return context[prefix];}
+  function expandList(container,force){
+    if(container["@list"]===undefined) return container;
+    if(!force && !container["@list"].find(x=>x["@list"]!==undefined)) return container;
+
+    if(container["@list"].length===0)
+      return {"@id" : "http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"};
+
+    var root = {};
+    var focus = null;
+    container["@list"].forEach(b=>{
+      if(focus===null) focus = root;
+      else {
+        focus["http://www.w3.org/1999/02/22-rdf-syntax-ns#rest"] = {};
+        focus = focus["http://www.w3.org/1999/02/22-rdf-syntax-ns#rest"];
+      }
+      focus["http://www.w3.org/1999/02/22-rdf-syntax-ns#first"] = expandList(b,true);
+      focus["http://www.w3.org/1999/02/22-rdf-syntax-ns#rest"] = {
+        "@id" : "http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"
+      };
+    });
+    return root;
+  }
 }
 
 // [1] turtleDoc	::=	statement*
@@ -30,6 +52,12 @@ turtleDoc = statements:statement* IGNORE* {
       jsonld["@graph"].push(b);
     });
   });
+
+  if(jsonld["@graph"].length===1){
+    Object.assign(jsonld,jsonld["@graph"][0]);
+    delete jsonld["@graph"];
+  }
+
   return jsonld;
 }
 
@@ -132,7 +160,7 @@ verb =  a:predicate {return a;} / IGNORE* 'a' {return '@type';}
 //  return root;
 //
 // } / BlankNode / iri
-subject = collection / BlankNode / iri
+subject = a:collection{return expandList(a,true);} / BlankNode / iri
 
 // [11]	predicate		::=	iri
 predicate = IGNORE* a:iri {return a;}
@@ -140,7 +168,7 @@ predicate = IGNORE* a:iri {return a;}
 // [12]	object			::=	iri | BlankNode | collection | blankNodePropertyList | literal
 object =
   literal /
-  collection /
+  a:collection {return expandList(a,false);} /
   a:BlankNode {return a==="[]" ? {} : {"@id":a};} /
   a:blankNodePropertyList {return a;} /
   a:iri {return {"@id":a};}
@@ -152,26 +180,7 @@ literal = RDFLiteral / NumericLiteral / BooleanLiteral
 blankNodePropertyList = IGNORE* '[' a:predicateObjectList IGNORE* ']' {return a;}
 
 // Dobe [15]	collection		::=	'(' object* ')'
-//collection = IGNORE* '(' a:object* IGNORE* ')' {return {"@list":a};}
-collection = IGNORE* '(' a:object* IGNORE* ')' {
-  if(a.length===0)
-    return {"@id" : "http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"};
-
-  var root = {};
-  var focus = null;
-  a.forEach(b=>{
-    if(focus===null) focus = root;
-    else{
-      focus["http://www.w3.org/1999/02/22-rdf-syntax-ns#rest"] = {};
-      focus = focus["http://www.w3.org/1999/02/22-rdf-syntax-ns#rest"];
-    }
-    focus["http://www.w3.org/1999/02/22-rdf-syntax-ns#first"] = b;
-    focus["http://www.w3.org/1999/02/22-rdf-syntax-ns#rest"] = {
-      "@id" : "http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"
-    };
-  });
-  return root;
-}
+collection = IGNORE* '(' a:object* IGNORE* ')' {return {"@list":a};}
 
 // [16]	NumericLiteral		::=	INTEGER | DECIMAL | DOUBLE
 NumericLiteral = IGNORE* a:(DOUBLE/DECIMAL/INTEGER) {return a;}
@@ -254,32 +263,23 @@ BLANK_NODE_LABEL = $(
 LANGTAG = '@' a:[a-zA-Z]+ b:('-' s:[a-zA-Z0-9]+ {return '-'+s.join("");})* {return a.join("")+b.join("");}
 
 // [19]	INTEGER			::=	[+-]? [0-9]+
-INTEGER =
-  s:[+-]? i:[0-9]+ {return parseFloat((s==="-" ? "-" : "")+i.join(""));}
+INTEGER = a:$([+-]? [0-9]+) { return parseInt(a);}
 
 // [20]	DECIMAL			::=	[+-]? [0-9]* '.' [0-9]+
-
-DECIMAL =
-  s:[+-]? i:[0-9]* '.' f:[0-9]+ {
-    return {
-      "@value" : (s==="-" ? "-" : "")+i.join("")+"."+f.join(""),
-      "@type" : "http://www.w3.org/2001/XMLSchema#decimal"
-    };
+DECIMAL = a:$([+-]? [0-9]* '.' [0-9]+) {
+  return {
+    "@value" : a,
+    "@type" : "http://www.w3.org/2001/XMLSchema#decimal"
   }
+}
 
 // [21]	DOUBLE			::=	[+-]? ([0-9]+ '.' [0-9]* EXPONENT | '.' [0-9]+ EXPONENT | [0-9]+ EXPONENT)
-DOUBLE =
-  s:[+-]? n:(
-    i:[0-9]+'.'f:[0-9]* e:EXPONENT {return i.join("")+"."+f.join("")+e;} /
-            '.'f:[0-9]* e:EXPONENT {return "0."+f.join("")+e;} /
-    i:[0-9]+            e:EXPONENT {return i.join("")+e;}
-  )
-  {
-    return {
-      "@value" : (s==="-"?"-":"") + n,
-      "@type" : "http://www.w3.org/2001/XMLSchema#double"
-    };
-  }
+DOUBLE = a:$([+-]? ([0-9]+'.'[0-9]* EXPONENT / '.'[0-9]+ EXPONENT / [0-9]+ EXPONENT) ) {
+  return {
+    "@value" : a,
+    "@type" : "http://www.w3.org/2001/XMLSchema#double"
+  };
+}
 
 // [154s]	EXPONENT		::=	[eE] [+-]? [0-9]+
 EXPONENT = $([eE] [+-]? [0-9]+)
@@ -341,22 +341,8 @@ ANON = '[' IGNORE* ']' {return "[]";}
 
 // [163s]	PN_CHARS_BASE			    ::=	[A-Z] | [a-z] | [#x00C0-#x00D6] | [#x00D8-#x00F6] | [#x00F8-#x02FF] | [#x0370-#x037D] | [#x037F-#x1FFF] | [#x200C-#x200D] | [#x2070-#x218F] | [#x2C00-#x2FEF] | [#x3001-#xD7FF] | [#xF900-#xFDCF] | [#xFDF0-#xFFFD] | [#x10000-#xEFFFF]
 PN_CHARS_BASE	=
-  [A-Z] /
-  [a-z] /
-  [\u00C0-\u00D6] /
-  [\u00D8-\u00F6] /
-  [\u00F8-\u02FF] /
-  [\u0370-\u037D] /
-  [\u037F-\u1FFF] /
-  [\u200C-\u200D] /
-  [\u2070-\u218F] /
-  [\u2C00-\u2FEF] /
-  [\u3001-\uD7FF] /
-  [\uF900-\uFDCF] /
-  [\uFDF0-\uFFFD]
-
-//PN_CHARS_BASE	=
-// [^\u0000-\u0040\u005B-\u0060\u007B-\u00BF\u00D7\u00F7\u0300-\u036F\u037E\u2000-\u200B\u200E-\u206F\u2190-\u2BFF\u2FF0-\u3000\uD800-\uF8FF\uFDD0-\uFDEF\uFFFE-\uFFFF]
+  a:[\ud800-\udbff] b:[\udc00-\udfff] {return a+b;} /
+  [A-Za-z\u00C0-\u00D6\u00D8-\u00F6\u00F8-\u02FF\u0370-\u037D\u037F-\u1FFF\u200C-\u200D\u2070-\u218F\u2C00-\u2FEF\u3001-\uD7FF\uF900-\uFDCF\uFDF0-\uFFFD]
 
 // [164s]	PN_CHARS_U			    ::=	PN_CHARS_BASE | '_'
 PN_CHARS_U = PN_CHARS_BASE / '_'
@@ -388,5 +374,4 @@ PERCENT = $('%' HEX HEX)
 HEX = [0-9A-Fa-f]
 
 // [172s]	PN_LOCAL_ESC	::=	'\' ('_' | '~' | '.' | '-' | '!' | '$' | '&' | "'" | '(' | ')' | '*' | '+' | ',' | ';' | '=' | '/' | '?' | '#' | '@' | '%')
-//PN_LOCAL_ESC = '\\_' / '\\~' / '\\.' / '\\-' / '\\!' / '\\$' / '\\&' / "\\'" / '\\(' / '\\)' / '\\*' / '\\+' / '\\,' / '\\;' / '\\=' / '\\/' / '\\?' / '\\#' / '\\@' / '\\%'
-PN_LOCAL_ESC = '\\' a:('_'/'~'/'.'/'-'/ '!' / '$' / '&' / "'" / '(' / ')' / '*' / '+' / ',' / ';' / '=' / '/' / '?' / '#' / '@' / '%') {return a;}
+PN_LOCAL_ESC = '\\' a:[_~.!$&'()*+,;=/?#@%-] {return a;}
