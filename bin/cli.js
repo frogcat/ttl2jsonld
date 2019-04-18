@@ -1,4 +1,17 @@
 const fs = require("fs");
+const readline = require('readline');
 const parse = require("../ttl2jsonld").parse;
-const json = parse(fs.readFileSync(process.argv[2], "UTF-8"));
-console.log(JSON.stringify(json, null, 2));
+
+const rl = readline.createInterface({
+  input: process.argv[2] ? fs.createReadStream(process.argv[2], 'UTF-8') : process.stdin,
+  crlfDelay: Infinity
+});
+
+const lines = [];
+rl.on('line', (line) => {
+  lines.push(line);
+}).on('close', () => {
+  const turtle = lines.join("\n");
+  const json = parse(turtle);
+  console.log(JSON.stringify(json, null, 2));
+});
