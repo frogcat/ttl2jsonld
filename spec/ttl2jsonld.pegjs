@@ -1,19 +1,66 @@
 {
   var URL = URL || require("url").URL;
   function createObject(property,value){var a={};a[property]=value;return a;}
-  var context = {};
-  function addPrefix(prefix,uri){
-    if(context[prefix]===undefined){
-      context[prefix] = [uri];
-      return;
+  var context = {
+    base : [],
+    data : {},
+    addBase : function(uri){
+      if(context.base.length===0){
+        context.base.push(uri);
+        return;
+      }
+      const last = context.base[context.base.length-1];
+      if(last!==uri) context.base.push(new URL(uri,last).toString());
+    },
+    addPrefix : function(prefix,uri){
+      const list = context.data[prefix];
+      if(list===undefined){
+        context.data[prefix] = [{uri:uri,count:0}];
+      }else if(list[list.length-1].uri!==uri){
+        list.push({uri:uri,count:0});
+      }
+    },
+    hasPrefix : function(prefix){
+      return this.data[prefix]!==undefined;
+    },
+    resolve : function(pname,force){
+      const prefix = Object.keys(context.data).find(key=>pname.indexOf(key+":")===0);
+      if(prefix!==undefined) {
+        const list = context.data[prefix];
+        if(list.length===1 && force!==true) return pname;
+        const uri = list[list.length-1].uri;
+        return pname.replace(prefix+":",uri);
+      }else{
+        var base = context.base.length === 0 ? options.baseIRI : context.base[context.base.length-1];
+        if(!base || pname.match(/^(http:|https:|urn:|file:)/)) return pname;
+        if(pname.indexOf("//")===0 && base) return base.split("//")[0]+pname;
+        return new URL(pname,base).toString();
+      }
+    },
+    increment : function(prefix){
+      const list = context.data[prefix];
+      if(list!==undefined)list[list.length-1].count++;
+    },
+    decrement : function(prefix){
+      const list = context.data[prefix];
+      if(list!==undefined)list[list.length-1].count--;
+    },
+    toJSON : function(){
+      const root = {};
+      if(context.base.length>0){
+        if(root["@context"]===undefined)root["@context"] = {};
+        root["@context"]["@base"] = context.base[0];
+      }
+      Object.keys(context.data).forEach(key=>{
+        const head = context.data[key][0];
+        if(head.uri==="http://www.w3.org/2001/XMLSchema#" && head.count < 1) return;
+        if(root["@context"]===undefined) root["@context"] = {};
+        root["@context"][key] = head.uri;
+      });
+      return root;
     }
-    const last = context[prefix][context[prefix].length-1];
-    if(last!==uri){
-      if(prefix==="@base") context[prefix].push(new URL(uri,last).toString());
-      else context[prefix].push(uri);
-    }
-  }
-  function getPrefix(prefix){return context[prefix];}
+  };
+
   function expandList(container,force){
     if(container["@list"]===undefined) return container;
     if(!force && !container["@list"].find(x=>x["@list"]!==undefined)) return container;
@@ -40,12 +87,7 @@
 
 // [1] turtleDoc	::=	statement*
 turtleDoc = statements:statement* IGNORE* {
-  var jsonld = {};
-  Object.keys(context).forEach(key=>{
-    if(jsonld["@context"]===undefined) jsonld["@context"] = {};
-    jsonld["@context"][key] = context[key][0];
-  });
-
+  var jsonld = context.toJSON();
   jsonld["@graph"] = [];
   statements.filter(a=>Array.isArray(a)).forEach(a=>{
     a.forEach(b=>{
@@ -72,25 +114,25 @@ directive = prefixID/base/sparqlPrefix/sparqlBase
 
 // [4]	prefixID	::=	'@prefix' PNAME_NS IRIREF '.'
 prefixID = IGNORE* '@prefix' IGNORE* a:PNAME_NS_NO_CHECK IGNORE* b:IRIREF IGNORE* '.' {
-  addPrefix(a==="" ? "0" : a,b);
+  context.addPrefix(a==="" ? "0" : a,b);
   return {};
 }
 
 // [5]	base		::=	'@base' IRIREF '.'
 base = IGNORE* '@base' IGNORE* a:IRIREF IGNORE* '.' {
-  addPrefix("@base",a);
+  context.addBase(a);
   return {};
 }
 
 // [5s]	sparqlBase	::=	"BASE" IRIREF
 sparqlBase = IGNORE* [Bb][Aa][Ss][Ee] IGNORE* a:IRIREF {
-  addPrefix("@base",a);
+  context.addBase(a);
   return {};
 }
 
 // [6s]	sparqlPrefix	::=	"PREFIX" PNAME_NS IRIREF
 sparqlPrefix = IGNORE* [Pp][Rr][Ee][Ff][Ii][Xx] IGNORE* a:PNAME_NS_NO_CHECK IGNORE* b:IRIREF {
-  addPrefix(a==="" ? "0" : a,b);
+  context.addPrefix(a==="" ? "0" : a,b);
   return {};
 }
 
@@ -101,12 +143,6 @@ triples	=	s:subject p:predicateObjectList {
   else if(typeof s==='object') Object.assign(x,s);
   if(p) Object.assign(x,p);
   return [x];
-/*  return (Array.isArray(s) ? s : [s]).map(subject=>{
-    var x = {};
-    if(subject!=="[]") x["@id"] = subject;
-    Object.assign(x,p);
-    return x;
-  });*/
 } /
 s:blankNodePropertyList p:predicateObjectList? {
   var x = {};
@@ -116,7 +152,7 @@ s:blankNodePropertyList p:predicateObjectList? {
 }
 
 // [7]	predicateObjectList	::=	verb objectList (';' (verb objectList)?)*
-predicateObjectList = a:verb b:objectList c:(IGNORE* ';' d:(e:verb f:objectList {return createObject(e,f);})? {return d;})* {
+predicateObjectList = a:verb b:objectList c:(IGNORE* ';' d:(e:verb f:objectList {var x={};x[e]=f;return x;})? {return d;})* {
   var x = {};
   c.unshift(createObject(a,b));
   c.forEach(t=>{
@@ -143,23 +179,6 @@ objectList = a:object b:(IGNORE* ',' c:object {return c;})* {
 verb =  a:predicate {return a;} / IGNORE* 'a' {return '@type';}
 
 // [10]	subject			::=	iri | BlankNode | collection
-//subject = a:collection {
-//  var root = {};
-//  var focus = null;
-//  a["@list"].forEach(b=>{
-//    if(focus===null) focus = root;
-//    else{
-//      focus["http://www.w3.org/1999/02/22-rdf-syntax-ns#rest"] = {};
-//      focus = focus["http://www.w3.org/1999/02/22-rdf-syntax-ns#rest"];
-//    }
-//    focus["http://www.w3.org/1999/02/22-rdf-syntax-ns#first"] = b;
-//    focus["http://www.w3.org/1999/02/22-rdf-syntax-ns#rest"] = {
-//      "@id" : "http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"
-//    };
-//  });
-//  return root;
-//
-// } / BlankNode / iri
 subject = a:collection{return expandList(a,true);} / BlankNode / iri
 
 // [11]	predicate		::=	iri
@@ -188,7 +207,34 @@ NumericLiteral = IGNORE* a:(DOUBLE/DECIMAL/INTEGER) {return a;}
 // [128s]	RDFLiteral		::=	String (LANGTAG | '^^' iri)?
 RDFLiteral =
   IGNORE* a:String IGNORE* b:LANGTAG {return {"@value":a,"@language":b};} /
-  IGNORE* a:String IGNORE* '^^' IGNORE* b:iri {return {"@value":a,"@type":b};} /
+  IGNORE* a:String IGNORE* '^^' IGNORE* b:iri {
+    if(b==="http://www.w3.org/2001/XMLSchema#boolean" && a==="true") return true;
+    if(b==="http://www.w3.org/2001/XMLSchema#boolean" && a==="false") return false;
+    if(b==="http://www.w3.org/2001/XMLSchema#integer") return parseInt(a);
+    if(b==="http://www.w3.org/2001/XMLSchema#double") return parseFloat(a);
+
+    const uri = context.resolve(b,true);
+    if(uri){
+      const prefix = b.split(":")[0];
+      if(uri==="http://www.w3.org/2001/XMLSchema#boolean" && a==="true"){
+        context.decrement(prefix);
+        return true;
+      }
+      if(uri==="http://www.w3.org/2001/XMLSchema#boolean" && a==="false"){
+        context.decrement(prefix);
+        return false;
+      }
+      if(uri==="http://www.w3.org/2001/XMLSchema#integer"){
+        context.decrement(prefix);
+        return parseInt(a);
+      }
+      if(uri==="http://www.w3.org/2001/XMLSchema#double"){
+        context.decrement(prefix);
+        return parseFloat(a);
+      }
+    }
+    return {"@value":a,"@type":b};
+  } /
   IGNORE* a:String {return a;}
 
 // [133s]	BooleanLiteral		::=	'true' | 'false'
@@ -219,13 +265,8 @@ IRIREF = '<' a:([^\u0000-\u0020<>"{}|^`\\]/UCHAR)* '>' {
   }).join("");
   if(decoded.match(/^[^\u0000-\u0020<>"{}|^`\\]*$/)){
     var join = a.join("");
-    var base = options.baseIRI;
-    if(context["@base"]!==undefined) base = context["@base"][context["@base"].length-1];
-
-    if(!base || join.match(/^(http:|https:|urn:|file:)/)) return join;
-    if(join.indexOf("//")===0 && base) return base.split("//")[0]+join;
     try{
-      return new URL(join,base).toString();
+      return context.resolve(join);
     }catch(e){
       error("Invalid IRIREF "+join);
     }
@@ -236,9 +277,10 @@ IRIREF = '<' a:([^\u0000-\u0020<>"{}|^`\\]/UCHAR)* '>' {
 // [139s]	PNAME_NS		::=	PN_PREFIX? ':'
 // 未登録の PREFIX が使用されていたらエラーにする
 PNAME_NS = a:PN_PREFIX? ':' {
-  if(getPrefix(a||"0")===undefined)
+  a = a || "0";
+  if(context.hasPrefix(a)===false)
     error("undefined prefix "+a);
-  return (a||"0");
+  return a;
 }
 
 // PREFIX の検査を行わない
@@ -246,9 +288,8 @@ PNAME_NS_NO_CHECK = a:PN_PREFIX? ':' {return (a||"");}
 
 // [140s]	PNAME_LN		::=	PNAME_NS PN_LOCAL
 PNAME_LN = a:PNAME_NS b:PN_LOCAL {
-  var x = context[a];
-  if(x.length===1) return a+":"+b;
-  else return x[x.length-1] + b;
+  context.increment(a);
+  return context.resolve(a+":"+b);
 }
 
 // [141s]	BLANK_NODE_LABEL	::=	'_:' (PN_CHARS_U | [0-9]) ((PN_CHARS | '.')* PN_CHARS)?

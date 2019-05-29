@@ -771,4 +771,80 @@ describe('ttl2json', () => {
 
   });
 
+  describe('https://www.w3.org/TR/json-ld/#turtle', () => {
+
+    it('Prefix definitions', () => {
+      expect(ttl2json(`@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+
+<http://manu.sporny.org/about#manu> a foaf:Person;
+  foaf:name "Manu Sporny";
+  foaf:homepage <http://manu.sporny.org/> .`)).deep.equal({
+        "@context": {
+          "foaf": "http://xmlns.com/foaf/0.1/"
+        },
+        "@id": "http://manu.sporny.org/about#manu",
+        "@type": "foaf:Person",
+        "foaf:name": "Manu Sporny",
+        "foaf:homepage": {
+          "@id": "http://manu.sporny.org/"
+        }
+      });
+    });
+
+    it('Embedding', () => {
+      expect(ttl2json(`@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+
+    <http://manu.sporny.org/about#manu>
+      a foaf:Person;
+      foaf:name "Manu Sporny";
+      foaf:knows [ a foaf:Person; foaf:name "Gregg Kellogg" ] .`)).deep.equal({
+        "@context": {
+          "foaf": "http://xmlns.com/foaf/0.1/"
+        },
+        "@id": "http://manu.sporny.org/about#manu",
+        "@type": "foaf:Person",
+        "foaf:name": "Manu Sporny",
+        "foaf:knows": {
+          "@type": "foaf:Person",
+          "foaf:name": "Gregg Kellogg"
+        }
+      });
+    });
+
+    it('Conversion of native data types', () => {
+      expect(ttl2json(`@prefix ex: <http://example.com/vocab#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<http://example.com/>
+  ex:numbers "14"^^xsd:integer, "2.78E0"^^xsd:double ;
+  ex:booleans "true"^^xsd:boolean, "false"^^xsd:boolean .
+`)).deep.equal({
+        "@context": {
+          "ex": "http://example.com/vocab#"
+        },
+        "@id": "http://example.com/",
+        "ex:numbers": [14, 2.78],
+        "ex:booleans": [true, false]
+      });
+    });
+
+    it('Lists', () => {
+      expect(ttl2json(`@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+
+<http://example.org/people#joebob> a foaf:Person;
+  foaf:name "Joe Bob";
+  foaf:nick ( "joe" "bob" "jaybee" ) .`)).deep.equal({
+        "@context": {
+          "foaf": "http://xmlns.com/foaf/0.1/"
+        },
+        "@id": "http://example.org/people#joebob",
+        "@type": "foaf:Person",
+        "foaf:name": "Joe Bob",
+        "foaf:nick": {
+          "@list": ["joe", "bob", "jaybee"]
+        }
+      });
+    });
+
+  });
 });

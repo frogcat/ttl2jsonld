@@ -150,12 +150,7 @@
         peg$startRuleFunction  = peg$parseturtleDoc,
 
         peg$c0 = function(statements) {
-          var jsonld = {};
-          Object.keys(context).forEach(key=>{
-            if(jsonld["@context"]===undefined) jsonld["@context"] = {};
-            jsonld["@context"][key] = context[key][0];
-          });
-
+          var jsonld = context.toJSON();
           jsonld["@graph"] = [];
           statements.filter(a=>Array.isArray(a)).forEach(a=>{
             a.forEach(b=>{
@@ -183,13 +178,13 @@
         peg$c11 = "@prefix",
         peg$c12 = peg$literalExpectation("@prefix", false),
         peg$c13 = function(a, b) {
-          addPrefix(a==="" ? "0" : a,b);
+          context.addPrefix(a==="" ? "0" : a,b);
           return {};
         },
         peg$c14 = "@base",
         peg$c15 = peg$literalExpectation("@base", false),
         peg$c16 = function(a) {
-          addPrefix("@base",a);
+          context.addBase(a);
           return {};
         },
         peg$c17 = /^[Bb]/,
@@ -216,12 +211,6 @@
           else if(typeof s==='object') Object.assign(x,s);
           if(p) Object.assign(x,p);
           return [x];
-        /*  return (Array.isArray(s) ? s : [s]).map(subject=>{
-            var x = {};
-            if(subject!=="[]") x["@id"] = subject;
-            Object.assign(x,p);
-            return x;
-          });*/
         },
         peg$c36 = function(s, p) {
           var x = {};
@@ -231,7 +220,7 @@
         },
         peg$c37 = ";",
         peg$c38 = peg$literalExpectation(";", false),
-        peg$c39 = function(a, b, e, f) {return createObject(e,f);},
+        peg$c39 = function(a, b, e, f) {var x={};x[e]=f;return x;},
         peg$c40 = function(a, b, d) {return d;},
         peg$c41 = function(a, b, c) {
           var x = {};
@@ -275,7 +264,34 @@
         peg$c62 = function(a, b) {return {"@value":a,"@language":b};},
         peg$c63 = "^^",
         peg$c64 = peg$literalExpectation("^^", false),
-        peg$c65 = function(a, b) {return {"@value":a,"@type":b};},
+        peg$c65 = function(a, b) {
+            if(b==="http://www.w3.org/2001/XMLSchema#boolean" && a==="true") return true;
+            if(b==="http://www.w3.org/2001/XMLSchema#boolean" && a==="false") return false;
+            if(b==="http://www.w3.org/2001/XMLSchema#integer") return parseInt(a);
+            if(b==="http://www.w3.org/2001/XMLSchema#double") return parseFloat(a);
+
+            const uri = context.resolve(b,true);
+            if(uri){
+              const prefix = b.split(":")[0];
+              if(uri==="http://www.w3.org/2001/XMLSchema#boolean" && a==="true"){
+                context.decrement(prefix);
+                return true;
+              }
+              if(uri==="http://www.w3.org/2001/XMLSchema#boolean" && a==="false"){
+                context.decrement(prefix);
+                return false;
+              }
+              if(uri==="http://www.w3.org/2001/XMLSchema#integer"){
+                context.decrement(prefix);
+                return parseInt(a);
+              }
+              if(uri==="http://www.w3.org/2001/XMLSchema#double"){
+                context.decrement(prefix);
+                return parseFloat(a);
+              }
+            }
+            return {"@value":a,"@type":b};
+          },
         peg$c66 = "true",
         peg$c67 = peg$literalExpectation("true", false),
         peg$c68 = function() {return true;},
@@ -299,13 +315,8 @@
           }).join("");
           if(decoded.match(/^[^\u0000-\u0020<>"{}|^`\\]*$/)){
             var join = a.join("");
-            var base = options.baseIRI;
-            if(context["@base"]!==undefined) base = context["@base"][context["@base"].length-1];
-
-            if(!base || join.match(/^(http:|https:|urn:|file:)/)) return join;
-            if(join.indexOf("//")===0 && base) return base.split("//")[0]+join;
             try{
-              return new URL(join,base).toString();
+              return context.resolve(join);
             }catch(e){
               error("Invalid IRIREF "+join);
             }
@@ -315,15 +326,15 @@
         peg$c80 = ":",
         peg$c81 = peg$literalExpectation(":", false),
         peg$c82 = function(a) {
-          if(getPrefix(a||"0")===undefined)
+          a = a || "0";
+          if(context.hasPrefix(a)===false)
             error("undefined prefix "+a);
-          return (a||"0");
+          return a;
         },
         peg$c83 = function(a) {return (a||"");},
         peg$c84 = function(a, b) {
-          var x = context[a];
-          if(x.length===1) return a+":"+b;
-          else return x[x.length-1] + b;
+          context.increment(a);
+          return context.resolve(a+":"+b);
         },
         peg$c85 = "_:",
         peg$c86 = peg$literalExpectation("_:", false),
@@ -4570,19 +4581,66 @@
 
       var URL = URL || require("url").URL;
       function createObject(property,value){var a={};a[property]=value;return a;}
-      var context = {};
-      function addPrefix(prefix,uri){
-        if(context[prefix]===undefined){
-          context[prefix] = [uri];
-          return;
+      var context = {
+        base : [],
+        data : {},
+        addBase : function(uri){
+          if(context.base.length===0){
+            context.base.push(uri);
+            return;
+          }
+          const last = context.base[context.base.length-1];
+          if(last!==uri) context.base.push(new URL(uri,last).toString());
+        },
+        addPrefix : function(prefix,uri){
+          const list = context.data[prefix];
+          if(list===undefined){
+            context.data[prefix] = [{uri:uri,count:0}];
+          }else if(list[list.length-1].uri!==uri){
+            list.push({uri:uri,count:0});
+          }
+        },
+        hasPrefix : function(prefix){
+          return this.data[prefix]!==undefined;
+        },
+        resolve : function(pname,force){
+          const prefix = Object.keys(context.data).find(key=>pname.indexOf(key+":")===0);
+          if(prefix!==undefined) {
+            const list = context.data[prefix];
+            if(list.length===1 && force!==true) return pname;
+            const uri = list[list.length-1].uri;
+            return pname.replace(prefix+":",uri);
+          }else{
+            var base = context.base.length === 0 ? options.baseIRI : context.base[context.base.length-1];
+            if(!base || pname.match(/^(http:|https:|urn:|file:)/)) return pname;
+            if(pname.indexOf("//")===0 && base) return base.split("//")[0]+pname;
+            return new URL(pname,base).toString();
+          }
+        },
+        increment : function(prefix){
+          const list = context.data[prefix];
+          if(list!==undefined)list[list.length-1].count++;
+        },
+        decrement : function(prefix){
+          const list = context.data[prefix];
+          if(list!==undefined)list[list.length-1].count--;
+        },
+        toJSON : function(){
+          const root = {};
+          if(context.base.length>0){
+            if(root["@context"]===undefined)root["@context"] = {};
+            root["@context"]["@base"] = context.base[0];
+          }
+          Object.keys(context.data).forEach(key=>{
+            const head = context.data[key][0];
+            if(head.uri==="http://www.w3.org/2001/XMLSchema#" && head.count < 1) return;
+            if(root["@context"]===undefined) root["@context"] = {};
+            root["@context"][key] = head.uri;
+          });
+          return root;
         }
-        const last = context[prefix][context[prefix].length-1];
-        if(last!==uri){
-          if(prefix==="@base") context[prefix].push(new URL(uri,last).toString());
-          else context[prefix].push(uri);
-        }
-      }
-      function getPrefix(prefix){return context[prefix];}
+      };
+
       function expandList(container,force){
         if(container["@list"]===undefined) return container;
         if(!force && !container["@list"].find(x=>x["@list"]!==undefined)) return container;
