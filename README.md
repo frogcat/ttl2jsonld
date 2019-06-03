@@ -20,9 +20,8 @@ With this converter, you can obtain `Output JSON-LD` from `Input Turtle`, as sho
 ### Output JSON-LD
 
 ```exampl67.json
-"@context":
 {
-  {
+  "@context": {
     "foaf": "http://xmlns.com/foaf/0.1/"
   },
   "@id": "http://manu.sporny.org/about#manu",
@@ -36,13 +35,13 @@ With this converter, you can obtain `Output JSON-LD` from `Input Turtle`, as sho
 
 ### node.js
 
-```
-npm install @frogcat/ttl2jsonld
+```a.sh
+$ npm install @frogcat/ttl2jsonld
 ```
 
 ### browser
 
-```
+```a.html
 <script src="https://frogcat.github.io/ttl2jsonld/ttl2jsonld.js"></script>
 ```
 
@@ -70,7 +69,7 @@ console.log(JSON.stringify(jsonld,null,2));
 
 Command line interface is also available.
 
-```
+```cli.sh
 $ npm install @frogcat/ttl2jsonld
 $ ttl2jsonld {input_turtle} > {output_jsonld}
 or
@@ -105,13 +104,13 @@ console.log(JSON.stringify(jsonld,null,2));
 
 Given `turtle_string`, `ttl2jsonld.parse` returns JSON Object.
 
-```
+```a.js
 var json_object = ttl2jsonld.parse(turtle_string);
 ```
 
 When you want to pass baseIRI, give second argument like this.
 
-```
+```a.js
 var json_object = ttl2jsonld.parse(turtle_string, {
   baseIRI : "http://example.org/"  
 });
