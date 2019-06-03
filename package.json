@@ -1,6 +1,6 @@
 {
   "name": "@frogcat/ttl2jsonld",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Turtle to JSON-LD converter for node.js and browser, no library dependencies",
   "main": "ttl2jsonld.js",
   "files": [
