@@ -1,5 +1,5 @@
 {
-  var URL = URL || require("url").URL;
+  var URL = typeof require === 'undefined' ? URL : require("url").URL;
   function createObject(property,value){var a={};a[property]=value;return a;}
   var context = {
     base : [],

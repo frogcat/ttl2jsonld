@@ -2,7 +2,9 @@
 
 Turtle to JSON-LD converter for node.js and browser, no library dependencies.
 
-## Example
+## Demo
+
+Online demo is available [here](https://frogcat.github.io/ttl2jsonld/demo/).
 
 With this converter, you can obtain `Output JSON-LD` from `Input Turtle`, as shown in [JSON-LD 1.0 Specification](https://www.w3.org/TR/json-ld/#turtle) .
 

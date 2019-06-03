@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <title>@frogcat/ttl2jsonld</title>
+  <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+  <script src="../ttl2jsonld.js"></script>
+  <style>
+    body>div {
+      max-width: 800px;
+      margin: auto;
+    }
+
+    textarea {
+      width: 100%;
+      height: 15em;
+    }
+
+    button {
+      display: block;
+      margin: auto;
+    }
+
+    pre {
+      width: 100%;
+      height: 15em;
+      background: black;
+      color: white;
+      padding: 5px;
+    }
+  </style>
+</head>
+
+<body>
+  <div>
+    <h1>@frogcat/ttl2jsonld demo</h1>
+    <h2>Input turtle</h2>
+    <textarea id="input"></textarea>
+    <button>convert</button>
+    <h2>Output JSON-LD</h2>
+    <pre id="output">Click 'convert' to run</pre>
+  </div>
+  <script>
+    $("#input").val(`@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+
+<http://manu.sporny.org/about#manu> a foaf:Person;
+  foaf:name "Manu Sporny";
+  foaf:homepage <http://manu.sporny.org/> .`);
+
+    $("button").click(function() {
+      try {
+        var t = $("#input").val();
+        var j = ttl2jsonld.parse(t);
+        $("#output").text(JSON.stringify(j, null, 2));
+      } catch (e) {
+        console.log(e);
+        alert(e);
+      }
+    });
+  </script>
+</body>
+
+</html>
