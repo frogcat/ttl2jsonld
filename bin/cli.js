@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 const fs = require("fs");
 const readline = require('readline');
 const parse = require("../ttl2jsonld").parse;
