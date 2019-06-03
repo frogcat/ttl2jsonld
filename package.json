@@ -4,7 +4,8 @@
   "description": "Turtle to JSON-LD converter for node.js and browser, no library dependencies",
   "main": "ttl2jsonld.js",
   "files": [
-    "ttl2jsonld.js"
+    "ttl2jsonld.js",
+    "bin/cli.js"
   ],
   "bin": {
     "ttl2jsonld": "./bin/cli.js"
