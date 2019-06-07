@@ -35,7 +35,7 @@
     "@rdfjs/data-model": "^1.1.1",
     "@rdfjs/parser-jsonld": "^1.1.1",
     "chai": "^4.2.0",
-    "mocha": "^6.0.2",
+    "mocha": "^6.1.4",
     "pegjs": "^0.10.0",
     "rdf-test-suite": "^1.6.0",
     "string-to-stream": "^1.1.1"
