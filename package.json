@@ -32,12 +32,12 @@
   },
   "homepage": "https://github.com/frogcat/ttl2jsonld#readme",
   "devDependencies": {
-    "@rdfjs/data-model": "^1.1.2",
-    "@rdfjs/parser-jsonld": "^1.2.0",
+    "@rdfjs/data-model": "^1.2.0",
+    "@rdfjs/parser-jsonld": "^1.2.1",
     "chai": "^4.2.0",
     "mocha": "^7.2.0",
     "pegjs": "^0.10.0",
-    "rdf-test-suite": "^1.13.0",
+    "rdf-test-suite": "^1.14.0",
     "string-to-stream": "^3.0.1"
   }
 }
