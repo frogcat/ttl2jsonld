@@ -352,7 +352,14 @@
         peg$c98 = function(a, b) {return a.join("")+b.join("");},
         peg$c99 = /^[+\-]/,
         peg$c100 = peg$classExpectation(["+", "-"], false, false),
-        peg$c101 = function(a) { return parseInt(a);},
+        peg$c101 = function(a) {
+          if(a.match(/^[0+][0-9]+$/))
+            return {
+              "@value" : a,
+              "@type" : "http://www.w3.org/2001/XMLSchema#integer"
+            };
+          return parseInt(a);
+        },
         peg$c102 = function(a) {
           return {
             "@value" : a,

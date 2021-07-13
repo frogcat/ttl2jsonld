@@ -304,7 +304,14 @@ BLANK_NODE_LABEL = $(
 LANGTAG = '@' a:[a-zA-Z]+ b:('-' s:[a-zA-Z0-9]+ {return '-'+s.join("");})* {return a.join("")+b.join("");}
 
 // [19]	INTEGER			::=	[+-]? [0-9]+
-INTEGER = a:$([+-]? [0-9]+) { return parseInt(a);}
+INTEGER = a:$([+-]? [0-9]+) {
+  if(a.match(/^[0+][0-9]+$/))
+    return {
+      "@value" : a,
+      "@type" : "http://www.w3.org/2001/XMLSchema#integer"
+    };
+  return parseInt(a);
+}
 
 // [20]	DECIMAL			::=	[+-]? [0-9]* '.' [0-9]+
 DECIMAL = a:$([+-]? [0-9]* '.' [0-9]+) {
