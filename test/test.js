@@ -275,7 +275,10 @@ describe('ttl2json', () => {
       });
       expect(ttl2json(`<I> <http://example.org/age> +12.`)).deep.equal({
         "@id": "I",
-        "http://example.org/age": 12
+        "http://example.org/age": {
+          "@value": "+12",
+          "@type": "http://www.w3.org/2001/XMLSchema#integer"
+        }
       });
       expect(ttl2json(`<I> <http://example.org/age> -12.`)).deep.equal({
         "@id": "I",
