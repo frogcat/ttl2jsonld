@@ -130,6 +130,6 @@ var json_object = ttl2jsonld.parse(turtle_string, {
 ### testing
 
 - Tested with [rdf-test-suite](https://www.npmjs.com/package/rdf-test-suite).
-- Currently 291 / 298 tests succeeded.
+- Currently 294 / 298 tests succeeded.
 - Run `npm run spec-turtle` to start rdr-test-suite.
 - Other miscellaneous tests are located in `test/test.js`, `npm run test` to run.
