@@ -1,6 +1,5 @@
 const parse = require("../ttl2jsonld").parse;
-const ParserJsonld = require('@rdfjs/parser-jsonld');
-const stringToStream = require('string-to-stream');
+const JsonLdParser = require("jsonld-streaming-parser").JsonLdParser;
 
 module.exports = {
   parse: function(ttl, baseIRI, options) {
@@ -9,9 +8,7 @@ module.exports = {
         const jsonld = parse(ttl, {
           baseIRI: baseIRI
         });
-        const input = stringToStream(JSON.stringify(jsonld));
-        const parserJsonld = new ParserJsonld();
-        const output = parserJsonld.import(input);
+        const output = new JsonLdParser();
         const quads = [];
         output.on('data', quad => {
           quads.push(quad);
@@ -20,6 +17,8 @@ module.exports = {
         }).on('end', () => {
           resolve(quads);
         });
+        output.write(JSON.stringify(jsonld));
+        output.end();
       } catch (e) {
         reject(e);
       }
