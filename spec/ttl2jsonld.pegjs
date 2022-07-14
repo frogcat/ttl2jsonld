@@ -1,5 +1,6 @@
 {
-  var URL = typeof require === 'undefined' ? URL : require("url").URL;
+  var isBrowser=new Function("try {return this===window;}catch(e){ return false;}");
+  var URL = isBrowser() ? window.URL : require("url").URL;
   function createObject(property,value){var a={};a[property]=value;return a;}
   var context = {
     base : [],
