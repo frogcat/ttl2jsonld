@@ -11,7 +11,7 @@
     "ttl2jsonld": "./bin/cli.js"
   },
   "scripts": {
-    "test": "mocha",
+    "test": "tape test/test.js",
     "build": "pegjs -o ttl2jsonld.js --format umd --export-var ttl2jsonld spec/ttl2jsonld.pegjs",
     "spec-turtle": "rdf-test-suite spec/parser.js https://w3c.github.io/rdf-tests/turtle/manifest.ttl -c .rdf-test-suite-cache/"
   },
@@ -32,10 +32,9 @@
   },
   "homepage": "https://github.com/frogcat/ttl2jsonld#readme",
   "devDependencies": {
-    "chai": "^4.3.6",
     "jsonld-streaming-parser": "^2.4.3",
-    "mocha": "^9.2.2",
     "pegjs": "^0.10.0",
-    "rdf-test-suite": "^1.18.0"
+    "rdf-test-suite": "^1.18.0",
+    "tape": "^5.6.3"
   }
 }
