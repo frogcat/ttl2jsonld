@@ -4588,6 +4588,7 @@
 
       var isBrowser=new Function("try {return this===window;}catch(e){ return false;}");
       var URL = isBrowser() ? window.URL : require("url").URL;
+      var isIRI = function(a){return a.match(/^[a-z](.*?):(.+?)/g);};
       function createObject(property,value){var a={};a[property]=value;return a;}
       var context = {
         base : [],
@@ -4615,7 +4616,7 @@
           const prefix = Object.keys(context.data).find(key=>pname.indexOf(key+":")===0);
           if(prefix!==undefined) {
             const list = context.data[prefix];
-            if(list.length===1 && force!==true) return pname;
+            if(list.length===1 && force!==true && isIRI(list[0].uri)) return pname;
             const uri = list[list.length-1].uri;
             return pname.replace(prefix+":",uri);
           }else{
@@ -4642,6 +4643,7 @@
           Object.keys(context.data).forEach(key=>{
             const head = context.data[key][0];
             if(head.uri==="http://www.w3.org/2001/XMLSchema#" && head.count < 1) return;
+            if(!isIRI(head.uri)) return;
             if(root["@context"]===undefined) root["@context"] = {};
             root["@context"][key] = head.uri;
           });
