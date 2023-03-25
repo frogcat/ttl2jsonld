@@ -981,3 +981,16 @@ test("ttl2json:https://www.w3.org/TR/json-ld/#turtle", (t) => {
   );
   t.end();
 });
+
+test("ttl2json:misc", (t) => {
+  t.deepEqual(
+    ttl2json(`\ufeff<I> <http://xmlns.com/foaf/0.1/name> "Bob".`),
+    {
+      "@id": "I",
+      "http://xmlns.com/foaf/0.1/name": "Bob",
+    },
+    "UTF-8 BOM"
+  );
+
+  t.end();
+});

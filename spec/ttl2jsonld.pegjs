@@ -89,7 +89,7 @@
 }
 
 // [1] turtleDoc	::=	statement*
-turtleDoc = statements:statement* IGNORE* {
+turtleDoc = BOM* statements:statement* IGNORE* {
   var jsonld = context.toJSON();
   jsonld["@graph"] = [];
   statements.filter(a=>Array.isArray(a)).forEach(a=>{
@@ -105,6 +105,8 @@ turtleDoc = statements:statement* IGNORE* {
 
   return jsonld;
 }
+
+BOM = '\ufeff'
 
 // [2] statement	::=	directive | triples '.'
 statement = directive / a:triples IGNORE* '.' {return a;}
