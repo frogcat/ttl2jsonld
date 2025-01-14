@@ -4613,8 +4613,6 @@
     }
 
 
-      var isBrowser=new Function("try {return this===window;}catch(e){ return false;}");
-      var URL = isBrowser() ? window.URL : require("url").URL;
       var isIRI = function(a){return a.match(/^[a-z](.*?):(.+?)/g);};
       function createObject(property,value){var a={};a[property]=value;return a;}
       var context = {
