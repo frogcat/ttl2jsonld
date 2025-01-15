@@ -8,7 +8,6 @@ Online demo is available [here](https://frogcat.github.io/ttl2jsonld/demo/).
 
 With this converter, you can obtain `Output JSON-LD` from `Input Turtle`, as shown in [JSON-LD 1.0 Specification](https://www.w3.org/TR/json-ld/#turtle) .
 
-
 ### Input Turtle
 
 ```example66.ttl
@@ -114,10 +113,9 @@ When you want to pass baseIRI, give second argument like this.
 
 ```a.js
 var json_object = ttl2jsonld.parse(turtle_string, {
-  baseIRI : "http://example.org/"  
+  baseIRI : "http://example.org/"
 });
 ```
-
 
 ## For developers
 
@@ -129,7 +127,7 @@ var json_object = ttl2jsonld.parse(turtle_string, {
 
 ### testing
 
-- Tested with [rdf-test-suite](https://www.npmjs.com/package/rdf-test-suite).
-- Currently 294 / 298 tests succeeded.
+- Tested with [rdf-test-suite](https://www.npmjs.com/package/rdf-test-suite) and <https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-turtle/manifest.ttl> .
+- Currently 298 / 301 tests succeeded.
 - Run `npm run spec-turtle` to start rdr-test-suite.
 - Other miscellaneous tests are located in `test/test.js`, `npm run test` to run.

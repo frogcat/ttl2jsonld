@@ -13,7 +13,7 @@
   "scripts": {
     "test": "tape test/*.js",
     "build": "pegjs -o ttl2jsonld.js --format umd --export-var ttl2jsonld spec/ttl2jsonld.pegjs",
-    "spec-turtle": "rdf-test-suite spec/parser.js https://w3c.github.io/rdf-tests/turtle/manifest.ttl -c .rdf-test-suite-cache/"
+    "spec-turtle": "rdf-test-suite spec/parser.js https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-turtle/manifest.ttl -c .rdf-test-suite-cache/"
   },
   "repository": {
     "type": "git",
@@ -34,7 +34,7 @@
   "devDependencies": {
     "jsonld-streaming-parser": "^2.4.3",
     "pegjs": "^0.10.0",
-    "rdf-test-suite": "^1.18.0",
+    "rdf-test-suite": "^2.0.0",
     "tape": "^5.6.3"
   }
 }
