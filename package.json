@@ -35,6 +35,6 @@
     "jsonld-streaming-parser": "^2.4.3",
     "pegjs": "^0.10.0",
     "rdf-test-suite": "^2.0.0",
-    "tape": "^5.6.3"
+    "tape": "^5.9.0"
   }
 }
