@@ -8,10 +8,10 @@
     "bin/cli.js"
   ],
   "bin": {
-    "ttl2jsonld": "./bin/cli.js"
+    "ttl2jsonld": "bin/cli.js"
   },
   "scripts": {
-    "test": "tape test/*.js",
+    "test": "node --test test/*.js",
     "build": "pegjs -o ttl2jsonld.js --format umd --export-var ttl2jsonld spec/ttl2jsonld.pegjs",
     "spec-turtle": "rdf-test-suite spec/parser.js https://w3c.github.io/rdf-tests/rdf/rdf11/rdf-turtle/manifest.ttl -c .rdf-test-suite-cache/"
   },
@@ -34,7 +34,6 @@
   "devDependencies": {
     "jsonld-streaming-parser": "^2.4.3",
     "pegjs": "^0.10.0",
-    "rdf-test-suite": "^2.0.0",
-    "tape": "^5.9.0"
+    "rdf-test-suite": "^2.0.0"
   }
 }

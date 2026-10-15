@@ -1,8 +1,9 @@
 const ttl2json = require("../ttl2jsonld").parse;
-const test = require("tape");
+const test = require("node:test");
+const assert = require("node:assert");
 
-test("ttl2json:basic", (t) => {
-  t.deepEqual(
+test("ttl2json:basic", () => {
+  assert.deepStrictEqual(
     ttl2json(`<I> <http://xmlns.com/foaf/0.1/name> "Bob".`),
     {
       "@id": "I",
@@ -11,7 +12,7 @@ test("ttl2json:basic", (t) => {
     "triple"
   );
 
-  t.deepEqual(
+  assert.deepStrictEqual(
     ttl2json(`
     <I> <http://xmlns.com/foaf/0.1/name> "Bob".
     <You> <http://xmlns.com/foaf/0.1/name> "Candy".
@@ -31,7 +32,7 @@ test("ttl2json:basic", (t) => {
     "triples"
   );
 
-  t.deepEqual(
+  assert.deepStrictEqual(
     ttl2json(`@prefix foaf: <http://xmlns.com/foaf/0.1/> .`),
     {
       "@context": {
@@ -42,7 +43,7 @@ test("ttl2json:basic", (t) => {
     "prefix"
   );
 
-  t.deepEqual(
+  assert.deepStrictEqual(
     ttl2json(`@prefix f.o.a.f: <http://xmlns.com/foaf/0.1/> .`),
     {
       "@context": {
@@ -53,9 +54,9 @@ test("ttl2json:basic", (t) => {
     "prefix with dot"
   );
 
-  t.throws(() => ttl2json(`@prefix foaf.: <http://xmlns.com/foaf/0.1/> .`), "prefix ends with dot");
+  assert.throws(() => ttl2json(`@prefix foaf.: <http://xmlns.com/foaf/0.1/> .`), "prefix ends with dot");
 
-  t.deepEqual(
+  assert.deepStrictEqual(
     ttl2json(`@prefix : <http://xmlns.com/foaf/0.1/> .`),
     {
       "@context": {
@@ -65,7 +66,7 @@ test("ttl2json:basic", (t) => {
     },
     "default prefix"
   );
-  t.deepEqual(
+  assert.deepStrictEqual(
     ttl2json(`
   @prefix foaf: <http://xmlns.com/foaf/0.1/> .
   @prefix skos: <http://www.w3.org/2004/02/skos/core#> .
@@ -79,7 +80,7 @@ test("ttl2json:basic", (t) => {
     },
     "prefixes"
   );
-  t.deepEqual(
+  assert.deepStrictEqual(
     ttl2json(`
   @prefix foaf: <http://xmlns.com/foaf/0.1/> .
 <I> <http://xmlns.com/foaf/0.1/name> "Bob".
@@ -94,7 +95,7 @@ test("ttl2json:basic", (t) => {
     "triple and prefix"
   );
 
-  t.deepEqual(
+  assert.deepStrictEqual(
     ttl2json(`@prefix foaf: <http://xmlns.com/foaf/0.1/> .
   <I> foaf:name "Bob".
   `),
@@ -108,7 +109,7 @@ test("ttl2json:basic", (t) => {
     "prefixed name"
   );
 
-  t.deepEqual(
+  assert.deepStrictEqual(
     ttl2json(`
   @prefix foaf: <http://xmlns.com/foaf/0.1/> .
   <I> <http://xmlns.com/foaf/0.1/name> "Bob".
@@ -134,7 +135,7 @@ test("ttl2json:basic", (t) => {
     "multiple graph"
   );
 
-  t.deepEqual(
+  assert.deepStrictEqual(
     ttl2json(`@prefix foaf: <http://xmlns.com/foaf/0.1/> .
 
     <http://manu.sporny.org/about#manu> a foaf:Person;
@@ -154,7 +155,7 @@ test("ttl2json:basic", (t) => {
     "EXAMPLE 66: A set of statements serialized in Turtle"
   );
 
-  t.deepEqual(
+  assert.deepStrictEqual(
     ttl2json(`@prefix foaf: <http://xmlns.com/foaf/0.1/> .
   <I> foaf:name "ねこ","Cat"@en .`),
     {
@@ -173,11 +174,10 @@ test("ttl2json:basic", (t) => {
     "Object list"
   );
 
-  t.end();
 });
 
-test("ttl2json:spec", (t) => {
-  t.deepEqual(
+test("ttl2json:spec", () => {
+  assert.deepStrictEqual(
     ttl2json(`@prefix foaf: <http://xmlns.com/foaf/0.1/> .`),
     {
       "@context": {
@@ -188,7 +188,7 @@ test("ttl2json:spec", (t) => {
     "[4] prefixID"
   );
 
-  t.deepEqual(
+  assert.deepStrictEqual(
     ttl2json(`@base <http://example.org/> .`),
     {
       "@context": {
@@ -199,7 +199,7 @@ test("ttl2json:spec", (t) => {
     "[5] base"
   );
 
-  t.deepEqual(
+  assert.deepStrictEqual(
     ttl2json(`BASE <http://example.org/>`),
     {
       "@context": {
@@ -210,7 +210,7 @@ test("ttl2json:spec", (t) => {
     "[5s] sparqlBase"
   );
 
-  t.deepEqual(
+  assert.deepStrictEqual(
     ttl2json(`PREFIX foaf: <http://xmlns.com/foaf/0.1/>`),
     {
       "@context": {
@@ -221,11 +221,10 @@ test("ttl2json:spec", (t) => {
     "[6s] sparqlPrefix"
   );
 
-  t.end();
 });
 
-test("ttl2json:literal", (t) => {
-  t.deepEqual(
+test("ttl2json:literal", () => {
+  assert.deepStrictEqual(
     ttl2json(`<I> <http://example.org/name> "Bob".`),
     {
       "@id": "I",
@@ -234,7 +233,7 @@ test("ttl2json:literal", (t) => {
     "string"
   );
 
-  t.deepEqual(
+  assert.deepStrictEqual(
     ttl2json(`<I> <http://example.org/name> 'Bob'.`),
     {
       "@id": "I",
@@ -243,7 +242,7 @@ test("ttl2json:literal", (t) => {
     "single quote string"
   );
 
-  t.deepEqual(
+  assert.deepStrictEqual(
     ttl2json(`<I> <http://example.org/name> """Bob""".`),
     {
       "@id": "I",
@@ -252,7 +251,7 @@ test("ttl2json:literal", (t) => {
     "long quote string"
   );
 
-  t.deepEqual(
+  assert.deepStrictEqual(
     ttl2json(`<I> <http://example.org/name> '''Bob'''.`),
     {
       "@id": "I",
@@ -261,7 +260,7 @@ test("ttl2json:literal", (t) => {
     "long single quote string"
   );
 
-  t.deepEqual(
+  assert.deepStrictEqual(
     ttl2json(`<I> <http://example.org/name> "Bob"@en.`),
     {
       "@id": "I",
@@ -273,7 +272,7 @@ test("ttl2json:literal", (t) => {
     "language tag 1"
   );
 
-  t.deepEqual(
+  assert.deepStrictEqual(
     ttl2json(`<I> <http://example.org/name> "山田"@ja.`),
     {
       "@id": "I",
@@ -285,7 +284,7 @@ test("ttl2json:literal", (t) => {
     "language tag 2"
   );
 
-  t.deepEqual(
+  assert.deepStrictEqual(
     ttl2json(`<I> <http://example.org/name> "ヤマダ"@ja-Hrkt.`),
     {
       "@id": "I",
@@ -297,7 +296,7 @@ test("ttl2json:literal", (t) => {
     "language tag 3"
   );
 
-  t.deepEqual(
+  assert.deepStrictEqual(
     ttl2json(`<I> <http://example.org/age> 12.`),
     {
       "@id": "I",
@@ -305,7 +304,7 @@ test("ttl2json:literal", (t) => {
     },
     "integer 1"
   );
-  t.deepEqual(
+  assert.deepStrictEqual(
     ttl2json(`<I> <http://example.org/age> +12.`),
     {
       "@id": "I",
@@ -316,7 +315,7 @@ test("ttl2json:literal", (t) => {
     },
     "integer 2"
   );
-  t.deepEqual(
+  assert.deepStrictEqual(
     ttl2json(`<I> <http://example.org/age> -12.`),
     {
       "@id": "I",
@@ -325,7 +324,7 @@ test("ttl2json:literal", (t) => {
     "integer 3"
   );
 
-  t.deepEqual(
+  assert.deepStrictEqual(
     ttl2json(`<I> <http://example.org/height> 123.4.`),
     {
       "@id": "I",
@@ -336,7 +335,7 @@ test("ttl2json:literal", (t) => {
     },
     "decimal 1"
   );
-  t.deepEqual(
+  assert.deepStrictEqual(
     ttl2json(`<I> <http://example.org/height> +123.4.`),
     {
       "@id": "I",
@@ -347,7 +346,7 @@ test("ttl2json:literal", (t) => {
     },
     "decimal 2"
   );
-  t.deepEqual(
+  assert.deepStrictEqual(
     ttl2json(`<I> <http://example.org/height> -123.4.`),
     {
       "@id": "I",
@@ -358,7 +357,7 @@ test("ttl2json:literal", (t) => {
     },
     "decimal 3"
   );
-  t.deepEqual(
+  assert.deepStrictEqual(
     ttl2json(`<I> <http://example.org/height> 0.123.`),
     {
       "@id": "I",
@@ -369,7 +368,7 @@ test("ttl2json:literal", (t) => {
     },
     "decimal 4"
   );
-  t.deepEqual(
+  assert.deepStrictEqual(
     ttl2json(`<I> <http://example.org/height> +0.123.`),
     {
       "@id": "I",
@@ -380,7 +379,7 @@ test("ttl2json:literal", (t) => {
     },
     "decimal 5"
   );
-  t.deepEqual(
+  assert.deepStrictEqual(
     ttl2json(`<I> <http://example.org/height> -0.123.`),
     {
       "@id": "I",
@@ -391,7 +390,7 @@ test("ttl2json:literal", (t) => {
     },
     "decimal 6"
   );
-  t.deepEqual(
+  assert.deepStrictEqual(
     ttl2json(`<I> <http://example.org/height> .123.`),
     {
       "@id": "I",
@@ -402,7 +401,7 @@ test("ttl2json:literal", (t) => {
     },
     "decimal 7"
   );
-  t.deepEqual(
+  assert.deepStrictEqual(
     ttl2json(`<I> <http://example.org/height> +.123.`),
     {
       "@id": "I",
@@ -413,7 +412,7 @@ test("ttl2json:literal", (t) => {
     },
     "decimal 8"
   );
-  t.deepEqual(
+  assert.deepStrictEqual(
     ttl2json(`<I> <http://example.org/height> -.123.`),
     {
       "@id": "I",
@@ -425,7 +424,7 @@ test("ttl2json:literal", (t) => {
     "decimal 9"
   );
 
-  t.deepEqual(
+  assert.deepStrictEqual(
     ttl2json(`<I> <http://example.org/height> 4.2E9.`),
     {
       "@id": "I",
@@ -436,7 +435,7 @@ test("ttl2json:literal", (t) => {
     },
     "double 1"
   );
-  t.deepEqual(
+  assert.deepStrictEqual(
     ttl2json(`<I> <http://example.org/height> -4.2E9.`),
     {
       "@id": "I",
@@ -447,7 +446,7 @@ test("ttl2json:literal", (t) => {
     },
     "double 2"
   );
-  t.deepEqual(
+  assert.deepStrictEqual(
     ttl2json(`<I> <http://example.org/height> 4.2E-9.`),
     {
       "@id": "I",
@@ -458,7 +457,7 @@ test("ttl2json:literal", (t) => {
     },
     "double 3"
   );
-  t.deepEqual(
+  assert.deepStrictEqual(
     ttl2json(`<I> <http://example.org/height> -4.2E-9.`),
     {
       "@id": "I",
@@ -470,7 +469,7 @@ test("ttl2json:literal", (t) => {
     "double 4"
   );
 
-  t.deepEqual(
+  assert.deepStrictEqual(
     ttl2json(`<I> <http://example.org/alive> true.`),
     {
       "@id": "I",
@@ -478,17 +477,16 @@ test("ttl2json:literal", (t) => {
     },
     "boolean 1"
   );
-  t.deepEqual(
+  assert.deepStrictEqual(
     ttl2json(`<I> <http://example.org/alive> false.`),
     { "@id": "I", "http://example.org/alive": false },
     "boolean 2"
   );
 
-  t.end();
 });
 
-test("ttl2json:predicate", (t) => {
-  t.deepEqual(
+test("ttl2json:predicate", () => {
+  assert.deepStrictEqual(
     ttl2json(`@prefix foaf: <http://xmlns.com/foaf/0.1/> .
   <I> <http://xmlns.com/foaf/0.1/name> "Bob".`),
     {
@@ -500,7 +498,7 @@ test("ttl2json:predicate", (t) => {
     },
     "iri"
   );
-  t.deepEqual(
+  assert.deepStrictEqual(
     ttl2json(`
   @prefix foaf: <http://xmlns.com/foaf/0.1/> .
 <I> foaf:name "Bob".
@@ -515,7 +513,7 @@ test("ttl2json:predicate", (t) => {
     "prefixed name"
   );
 
-  t.deepEqual(
+  assert.deepStrictEqual(
     ttl2json(`
   @prefix : <http://xmlns.com/foaf/0.1/> .
 <I> :name "Bob".
@@ -529,11 +527,10 @@ test("ttl2json:predicate", (t) => {
     },
     "prefixed name (zero-length)"
   );
-  t.end();
 });
 
-test("ttl2json:blank node", (t) => {
-  t.deepEqual(
+test("ttl2json:blank node", () => {
+  assert.deepStrictEqual(
     ttl2json(`
   @prefix foaf: <http://xmlns.com/foaf/0.1/> .
 [] foaf:name "Bob".
@@ -547,7 +544,7 @@ test("ttl2json:blank node", (t) => {
     "subject unlabeled"
   );
 
-  t.deepEqual(
+  assert.deepStrictEqual(
     ttl2json(`
   @prefix foaf: <http://xmlns.com/foaf/0.1/> .
 _:alice foaf:name "Alice".
@@ -562,7 +559,7 @@ _:alice foaf:name "Alice".
     "subject labeled"
   );
 
-  t.deepEqual(
+  assert.deepStrictEqual(
     ttl2json(`
   @prefix foaf: <http://xmlns.com/foaf/0.1/> .
 _:my.name.is foaf:name "Alice".
@@ -577,7 +574,7 @@ _:my.name.is foaf:name "Alice".
     "label with dot"
   );
 
-  t.throws(
+  assert.throws(
     () =>
       ttl2json(`
   @prefix foaf: <http://xmlns.com/foaf/0.1/> .
@@ -586,7 +583,7 @@ _:my.name.is. foaf:name "Alice".
     "label ends with dot"
   );
 
-  t.deepEqual(
+  assert.deepStrictEqual(
     ttl2json(`
   @prefix foaf: <http://xmlns.com/foaf/0.1/> .
 <I> foaf:know _:alice .
@@ -602,7 +599,7 @@ _:my.name.is. foaf:name "Alice".
     },
     "object labeled"
   );
-  t.deepEqual(
+  assert.deepStrictEqual(
     ttl2json(`
   @prefix foaf: <http://xmlns.com/foaf/0.1/> .
 <I> foaf:know [] .
@@ -616,11 +613,10 @@ _:my.name.is. foaf:name "Alice".
     },
     "object unlabeled"
   );
-  t.end();
 });
 
-test("ttl2json:collection", (t) => {
-  t.deepEqual(
+test("ttl2json:collection", () => {
+  assert.deepStrictEqual(
     ttl2json(`
   @prefix foaf: <http://xmlns.com/foaf/0.1/> .
 (<I> <You>) a foaf:Person .
@@ -645,7 +641,7 @@ test("ttl2json:collection", (t) => {
     "subject"
   );
 
-  t.deepEqual(
+  assert.deepStrictEqual(
     ttl2json(`
   @prefix foaf: <http://xmlns.com/foaf/0.1/> .
 () a foaf:Person .
@@ -660,7 +656,7 @@ test("ttl2json:collection", (t) => {
     "empty subject"
   );
 
-  t.deepEqual(
+  assert.deepStrictEqual(
     ttl2json(`
   @prefix foaf: <http://xmlns.com/foaf/0.1/> .
 <I> foaf:know (<You> <Cat>) .
@@ -684,7 +680,7 @@ test("ttl2json:collection", (t) => {
     "object"
   );
 
-  t.deepEqual(
+  assert.deepStrictEqual(
     ttl2json(`
   @prefix foaf: <http://xmlns.com/foaf/0.1/> .
 <I> foaf:know ((<You> <Cat>)) .
@@ -715,11 +711,10 @@ test("ttl2json:collection", (t) => {
     },
     "nested object"
   );
-  t.end();
 });
 
-test("ttl2json:blankNodePropertyList", (t) => {
-  t.deepEqual(
+test("ttl2json:blankNodePropertyList", () => {
+  assert.deepStrictEqual(
     ttl2json(`
   @prefix foaf: <http://xmlns.com/foaf/0.1/> .
 <I> foaf:know [ foaf:name "Bob"] .
@@ -735,7 +730,7 @@ test("ttl2json:blankNodePropertyList", (t) => {
     },
     "object"
   );
-  t.deepEqual(
+  assert.deepStrictEqual(
     ttl2json(`
   @prefix foaf: <http://xmlns.com/foaf/0.1/> .
 [ foaf:name "Bob" ; a foaf:Person ] .
@@ -750,7 +745,7 @@ test("ttl2json:blankNodePropertyList", (t) => {
     "subject"
   );
 
-  t.deepEqual(
+  assert.deepStrictEqual(
     ttl2json(`
   @prefix foaf: <http://xmlns.com/foaf/0.1/> .
 [ foaf:name "Bob"] .
@@ -763,29 +758,26 @@ test("ttl2json:blankNodePropertyList", (t) => {
     },
     "subject"
   );
-  t.end();
 });
 
-test("ttl2json:NOTE", (t) => {
-  t.throws(
-    () => ttl2jsonld(`@prefix foaf.: <http://xmlns.com/foaf/0.1/> .`),
+test("ttl2json:NOTE", () => {
+  assert.throws(
+    () => ttl2json(`@prefix foaf.: <http://xmlns.com/foaf/0.1/> .`),
     "@prefix での namespace prefix が . で終わるのは NG なので例外をスローすること"
   );
 
-  t.doesNotThrow(
+  assert.doesNotThrow(
     () =>
       ttl2json(`
   @prefix foaf: <http://xmlns.com/foaf/0.1/> .
 <I> a foaf:Person.
 `),
-    {},
     "prefixed name の直後に triple 終端の . が来る場合はエラーにならないこと"
   );
-  t.end();
 });
 
-test("ttl2json:suites", (t) => {
-  t.deepEqual(
+test("ttl2json:suites", () => {
+  assert.deepStrictEqual(
     ttl2json(`<http://a.example/\u0073> <http://a.example/p> <http://a.example/o> .`),
     {
       "@id": "http://a.example/\u0073",
@@ -796,7 +788,7 @@ test("ttl2json:suites", (t) => {
     "IRI_with_four_digit_numeric_escape.ttl"
   );
 
-  t.deepEqual(
+  assert.deepStrictEqual(
     ttl2json(`<http://a.example/\U00000073> <http://a.example/p> <http://a.example/o> .`),
     {
       "@id": "http://a.example/U00000073",
@@ -807,7 +799,7 @@ test("ttl2json:suites", (t) => {
     "IRI_with_eight_digit_numeric_escape.ttl"
   );
 
-  t.doesNotThrow(
+  assert.doesNotThrow(
     () =>
       ttl2json(`# In-scope base URI is <http://w3c.github.io/rdf-tests/turtle/turtle-subm-27.ttl> at this point
   <a1> <b1> <c1> .
@@ -825,7 +817,7 @@ test("ttl2json:suites", (t) => {
     "comment"
   );
 
-  t.deepEqual(
+  assert.deepStrictEqual(
     ttl2json(`@prefix : <http://example.org/stuff/1.0/> .
   :a :b ( ) .
   `),
@@ -841,7 +833,7 @@ test("ttl2json:suites", (t) => {
     "blank collection"
   );
 
-  t.deepEqual(
+  assert.deepStrictEqual(
     ttl2json(`@prefix : <http://www.w3.org/2013/TurtleTests/> .
   :s :p1 :o1 ;
      :p2 :o2 ;;
@@ -862,7 +854,7 @@ test("ttl2json:suites", (t) => {
     "blank predicate/object"
   );
 
-  t.deepEqual(
+  assert.deepStrictEqual(
     ttl2json(`@prefix : <http://www.w3.org/2013/TurtleTests/> .
   : : : .
   `),
@@ -878,7 +870,7 @@ test("ttl2json:suites", (t) => {
     "odd 1"
   );
 
-  t.deepEqual(
+  assert.deepStrictEqual(
     ttl2json(`@prefix p: <http://a.example/> .
   <http://a.example/s> <http://a.example/p> p:#comment
   .
@@ -894,12 +886,11 @@ test("ttl2json:suites", (t) => {
     },
     "odd 2"
   );
-  //t.deepEqual(ttl2json(``), {}, "");
-  t.end();
+  //assert.deepStrictEqual(ttl2json(``), {}, "");
 });
 
-test("ttl2json:https://www.w3.org/TR/json-ld/#turtle", (t) => {
-  t.deepEqual(
+test("ttl2json:https://www.w3.org/TR/json-ld/#turtle", () => {
+  assert.deepStrictEqual(
     ttl2json(`@prefix foaf: <http://xmlns.com/foaf/0.1/> .
 
 <http://manu.sporny.org/about#manu> a foaf:Person;
@@ -919,7 +910,7 @@ test("ttl2json:https://www.w3.org/TR/json-ld/#turtle", (t) => {
     "Prefix definitions"
   );
 
-  t.deepEqual(
+  assert.deepStrictEqual(
     ttl2json(`@prefix foaf: <http://xmlns.com/foaf/0.1/> .
 
   <http://manu.sporny.org/about#manu>
@@ -941,7 +932,7 @@ test("ttl2json:https://www.w3.org/TR/json-ld/#turtle", (t) => {
     "Embedding"
   );
 
-  t.deepEqual(
+  assert.deepStrictEqual(
     ttl2json(`@prefix ex: <http://example.com/vocab#> .
   @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
   
@@ -960,7 +951,7 @@ test("ttl2json:https://www.w3.org/TR/json-ld/#turtle", (t) => {
     "Conversion of native data types"
   );
 
-  t.deepEqual(
+  assert.deepStrictEqual(
     ttl2json(`@prefix foaf: <http://xmlns.com/foaf/0.1/> .
 
   <http://example.org/people#joebob> a foaf:Person;
@@ -979,11 +970,10 @@ test("ttl2json:https://www.w3.org/TR/json-ld/#turtle", (t) => {
     },
     "Lists"
   );
-  t.end();
 });
 
-test("ttl2json:misc", (t) => {
-  t.deepEqual(
+test("ttl2json:misc", () => {
+  assert.deepStrictEqual(
     ttl2json(`\ufeff<I> <http://xmlns.com/foaf/0.1/name> "Bob".`),
     {
       "@id": "I",
@@ -992,5 +982,4 @@ test("ttl2json:misc", (t) => {
     "UTF-8 BOM"
   );
 
-  t.end();
 });
